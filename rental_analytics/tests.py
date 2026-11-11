@@ -13,3 +13,6 @@ class UrlRoutingTests(SimpleTestCase):
 
     def test_home_route(self):
         self.assertEqual(resolve("/").url_name, "home")
+
+    def test_search_movie_route(self):
+        self.assertEqual(resolve("/analytics/search-movie/").func.__name__, "search_movie")
