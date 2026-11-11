@@ -1,0 +1,371 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Rental Analytics</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+body {
+    margin:0;
+    font-family:Arial;
+    background:#f4f6f9;
+    display:flex;
+}
+
+.sidebar {
+    width:220px;
+    height:100vh;
+    background:#2c3e50;
+    padding-top:20px;
+    position:fixed;
+    color:white;
+}
+
+.sidebar a {
+    display:block;
+    padding:12px;
+    color:white;
+    text-decoration:none;
+    transition:0.3s;
+}
+
+.sidebar a:hover {
+    background:#1abc9c;
+}
+
+.main {
+    margin-left:220px;
+    padding:25px;
+    width:100%;
+}
+
+.card {
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    animation: fadeIn 0.5s ease;
+}
+
+.dashboard-row {
+    display:flex;
+    gap:20px;
+    margin-bottom:20px;
+}
+
+.dashboard-box {
+    flex:1;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    text-align:center;
+}
+
+.fade-text {
+    font-size:18px;
+    font-weight:bold;
+    opacity:1;
+    transition:opacity 1s;
+}
+
+.green { color:green; }
+.red { color:red; }
+
+.filter-row {
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+select, button {
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+button {
+    background:#007bff;
+    color:white;
+    cursor:pointer;
+}
+
+table {
+    width:100%;
+    border-collapse:collapse;
+}
+
+th, td {
+    padding:10px;
+    border-bottom:1px solid #ddd;
+    text-align:center;
+}
+
+th {
+    background:#2c3e50;
+    color:white;
+}
+
+#chart {
+    max-width: 250px;
+    margin: auto;
+}
+
+/* PAGINATION */
+.pagination-container {
+    margin-top:30px;
+    display:flex;
+    justify-content:center;
+}
+
+.pagination {
+    display:flex;
+    gap:6px;
+}
+
+.pagination a {
+    padding:8px 12px;
+    background:#eee;
+    border-radius:6px;
+    text-decoration:none;
+}
+
+.pagination a.active {
+    background:#007bff;
+    color:white;
+}
+
+.pagination span {
+    padding:8px;
+    color:#999;
+}
+
+@keyframes fadeIn {
+    from {opacity:0; transform:translateY(10px);}
+    to {opacity:1;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<a href="/"><i class="fa fa-home"></i> Home</a>
+<a href="/analytics/movie/"><i class="fa fa-film"></i> Movie Prediction</a>
+</div>
+
+<div class="main">
+
+<h1>Rental Analytics</h1>
+
+<div class="dashboard-row">
+
+<!-- TOP GENRE -->
+<div class="dashboard-box">
+<h3>Top Genre (Popular)</h3>
+<canvas id="genreChart"></canvas>
+</div>
+
+<!-- COMPARISON -->
+<div class="dashboard-box">
+<h3>Prediction Comparison</h3>
+<canvas id="chart" height="120"></canvas>
+<p><span class="green">■ Popular</span> | <span class="red">■ Not Popular</span></p>
+</div>
+
+<!-- RIGHT SIDE (SPLIT BOX) -->
+<div style="flex:1; display:flex; flex-direction:column; gap:20px;">
+
+    <!-- POPULAR -->
+    <div class="dashboard-box">
+        <h3 class="green">Popular Movies</h3>
+        <div id="popularText" class="fade-text">-</div>
+    </div>
+
+    <!-- NOT POPULAR -->
+    <div class="dashboard-box">
+        <h3 class="red">Not Popular Movies</h3>
+        <div id="notPopularText" class="fade-text">-</div>
+    </div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<form method="GET" class="filter-row">
+
+<select name="filter_by" onchange="this.form.submit()">
+<option value="">Filter By</option>
+<option value="rating" {% if selected_filter == 'rating' %}selected{% endif %}>Rating</option>
+<option value="category" {% if selected_filter == 'category' %}selected{% endif %}>Category</option>
+</select>
+
+<select name="value">
+<option value="">Value</option>
+{% for v in filter_values %}
+<option value="{{ v }}" {% if v == selected_value %}selected{% endif %}>{{ v }}</option>
+{% endfor %}
+</select>
+
+<select name="sort">
+<option value="">Sort By</option>
+<option value="high" {% if selected_sort == 'high' %}selected{% endif %}>High Revenue</option>
+<option value="low" {% if selected_sort == 'low' %}selected{% endif %}>Low Revenue</option>
+</select>
+
+<button type="submit">Set Now</button>
+
+</form>
+
+<table>
+<thead>
+<tr>
+<th>Title</th>
+<th>Category</th>
+<th>Rating</th>
+<th>Total Rental</th>
+<th>Total Revenue</th>
+</tr>
+</thead>
+
+<tbody>
+{% for m in movies %}
+<tr>
+<td>{{ m.title }}</td>
+<td>{{ m.category }}</td>
+<td>{{ m.rating }}</td>
+<td>{{ m.total_rental }}</td>
+<td>{{ m.total_revenue }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No data available</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<div class="pagination-container">
+<div class="pagination">
+
+{% if page > 1 %}
+<a href="?page={{ page|add:'-1' }}&filter_by={{ selected_filter }}&value={{ selected_value }}&sort={{ selected_sort }}"><<</a>
+{% endif %}
+
+{% if show_first %}
+<a href="?page=1&filter_by={{ selected_filter }}&value={{ selected_value }}&sort={{ selected_sort }}">1</a>
+<span>...</span>
+{% endif %}
+
+{% for i in page_range %}
+<a href="?page={{ i }}&filter_by={{ selected_filter }}&value={{ selected_value }}&sort={{ selected_sort }}"
+class="{% if page == i %}active{% endif %}">
+{{ i }}
+</a>
+{% endfor %}
+
+{% if show_last %}
+<span>...</span>
+<a href="?page={{ total_pages }}&filter_by={{ selected_filter }}&value={{ selected_value }}&sort={{ selected_sort }}">
+{{ total_pages }}
+</a>
+{% endif %}
+
+{% if page < total_pages %}
+<a href="?page={{ page|add:'1' }}&filter_by={{ selected_filter }}&value={{ selected_value }}&sort={{ selected_sort }}">>></a>
+{% endif %}
+
+</div>
+</div>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const popularList = {{ popular_titles|safe }};
+const notPopularList = {{ not_popular_titles|safe }};
+
+function startSlider(list, elementId){
+    let i = 0;
+    const el = document.getElementById(elementId);
+
+    if(list.length === 0){
+        el.innerText = "No Data";
+        return;
+    }
+
+    setInterval(() => {
+        el.style.opacity = 0;
+
+        setTimeout(() => {
+            el.innerText = list[i];
+            el.style.opacity = 1;
+            i = (i + 1) % list.length;
+        }, 500);
+
+    }, 5000);
+}
+
+startSlider(popularList, "popularText");
+startSlider(notPopularList, "notPopularText");
+
+// BAR CHART
+new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: {
+        labels: ['Popular', 'Not Popular'],
+        datasets: [{
+            label: 'Total Movies',
+            data: [{{ popular_count }}, {{ not_popular_count }}],
+            backgroundColor: ['green', 'red']
+        }]
+    },
+    options: {
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// TOP GENRE HORIZONTAL BAR
+new Chart(document.getElementById('genreChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ genre_labels|safe }},
+        datasets: [{
+            label: 'Popular Count',
+            data: {{ genre_values|safe }},
+            backgroundColor: '#007bff'
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+
+</body>
+</html>

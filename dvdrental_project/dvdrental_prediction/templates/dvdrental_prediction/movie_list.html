@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'dvdrental_prediction/css/mystyle.css' %}">
+</head>
+<body>
+    <h1>Movie List</h1>
+    <a href="{% url 'home' %}">back to home</a>
+
+    <form method="get" action="{% url 'search_result' %}">
+        {{ form.as_p }}
+        <button type="submit">Search</button>
+    </form>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Release Year</th>
+            <th>Detail</th>
+        </tr>
+        {% for movie in movies %}
+        <tr>
+            <td>{{movie.film_id}}</td>
+            <td>{{movie.title}}</td>
+            <td>{{movie.release_year}}</td>
+            <td><a href="{% url 'movie_detail' film_id=movie.film_id %}">Details</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

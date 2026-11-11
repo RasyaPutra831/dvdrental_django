@@ -1,0 +1,397 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Movie Prediction</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {margin:0;font-family:Arial;background:#f4f6f9;display:flex; min-height: 100vh;}
+
+.sidebar {
+    width:220px;
+    height:100vh;
+    background:#2c3e50;
+    padding-top:20px;
+    position:fixed;
+    color:white;
+}
+
+.sidebar a {
+    display:block;
+    padding:12px;
+    color:white;
+    text-decoration:none;
+    transition:0.3s;
+}
+
+.sidebar a:hover {
+    background:#1abc9c;
+}
+
+.sidebar a {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:white;
+    padding:12px;
+    text-decoration:none;
+}
+
+.sidebar a:hover {background:#34495e;}
+
+.main {
+    margin-left:220px;
+    padding:25px;
+    width:100%;
+}
+
+.container {
+    max-width:1100px;
+    margin:auto;
+}
+
+.row {
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.card {
+    background: white;
+    padding:30px;
+    border-radius:20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    flex:1;
+    min-width:320px;
+    border: 1px solid rgba(255,255,255,0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff, #28a745);
+}
+
+h3 {margin-top:0;}
+
+label {
+    font-size:14px;
+    margin-bottom:4px;
+    display:block;
+}
+
+.input-field, select {
+    width:100%;
+    height: 42px;
+    padding: 12px 14px;
+    margin-bottom:15px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    font-size: 14px;
+    box-sizing: border-box;
+    background: white;
+}
+
+.input-field:focus, select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+/* Toggle Styles */
+.mode-toggle {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.mode-existing {
+    background: #007bff;
+    color: white;
+}
+
+.mode-existing:hover { background: #0056b3; }
+
+.mode-new {
+    background: #28a745;
+    color: white;
+}
+
+.mode-new:hover { background: #218838; }
+
+.mode-label {
+    text-align: center;
+    font-size: 14px;
+}
+
+.readonly-field {
+    background-color: #f8f9fa !important;
+    color: #6c757d;
+}
+
+.search-wrapper {position: relative;}
+
+.suggestions {
+    border:1px solid #ccc;
+    background:white;
+    position:absolute;
+    width:100%;
+    max-height:180px;
+    overflow-y:auto;
+    z-index:1000;
+    border-radius:6px;
+    display:none;
+}
+
+.suggestions div {
+    padding:10px;
+    cursor:pointer;
+}
+
+.suggestions div:hover {
+    background:#eee;
+}
+
+button {
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+    background:#007bff;
+    color:white;
+    cursor:pointer;
+}
+
+button.predict-btn {
+    padding:12px 24px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border:none;
+    border-radius:25px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+button.predict-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,123,255,0.6);
+}
+
+button:hover:not(.predict-btn) {
+    background:#0056b3;
+}
+
+.save-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    margin: 30px auto 30px;
+    display: block;
+    width: 220px;
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    transition: all 0.3s ease;
+    font-weight: bold;
+    position: relative;
+    bottom: 0;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+}
+
+.result-text {
+    font-size:22px;
+    font-weight:bold;
+    text-align:center;
+}
+
+.popular-text {color:green;}
+.not-popular-text {color:red;}
+
+.chart-container {
+    display:flex;
+    justify-content:center;
+    margin-top:15px;
+}
+
+@keyframes fadeInRotate {
+  0% { opacity: 0; transform: rotate(-180deg) scale(0.5); }
+  100% { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+
+.chart-container {
+  animation: fadeInRotate 0.8s ease-out;
+}
+
+.chart-box {
+  width: 400px !important;
+  height: 400px !important;
+  max-width: 90vw;
+}
+
+.chart-info {
+    text-align:center;
+    margin-top:10px;
+    font-size:14px;
+}
+
+.green {color:green;}
+.red {color:red;}
+
+table th, table td {
+    text-align: center;
+    padding: 10px;
+}
+
+#historyTable tbody tr {
+    border-bottom: 1px solid #ddd;
+}
+
+#historyTable tbody tr:hover {
+    background-color: #f5f5f5;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<a href="/"><i class="fas fa-home"></i> Home</a>
+<a href="/analytics/movie/"><i class="fas fa-film"></i> Movie Prediction</a>
+</div>
+
+<div class="main">
+<div class="container">
+
+<h1>Movie Prediction</h1>
+
+<div class="row">
+
+<!-- INPUT -->
+<div class="card">
+<h3>Input Data</h3>
+
+<label>Title Movie</label>
+<div class="search-wrapper" id="searchWrapper">
+    <input type="text" id="search" class="input-field" autocomplete="off" placeholder="Type movie title...">
+    <div id="suggestions" class="suggestions"></div>
+</div>
+
+<!-- Toggle -->
+<div class="mode-toggle" data-mode="existing">
+    <button type="button" class="mode-btn mode-existing active" onclick="toggleMode('existing')">
+        <div class="mode-label">Existing Movie<br><small>Auto-fill from DB</small></div>
+    </button>
+    <button type="button" class="mode-btn mode-new" onclick="toggleMode('new')">
+        <div class="mode-label">New Movie<br><small>Manual input</small></div>
+    </button>
+</div>
+
+<label>Category</label>
+<input id="category" class="input-field readonly-field" readonly data-mode="existing">
+
+<label>Total Revenue ($)</label>
+<input id="revenue" class="input-field readonly-field" readonly data-mode="existing" placeholder="e.g. 1500000">
+
+<label>Film Duration (min)</label>
+<input id="length" class="input-field readonly-field" readonly data-mode="existing" placeholder="e.g. 120">
+
+<label>Rating</label>
+<input id="rating" class="input-field readonly-field" readonly data-mode="existing" placeholder="e.g. PG-13">
+
+<label>Predict In (Month)</label>
+<select id="predict_month">
+    <option value="1">1 Month</option>
+    <option value="3">3 Months</option>
+    <option value="6">6 Months</option>
+</select>
+
+<button class="predict-btn" onclick="predict()">Predict</button>
+
+</div>
+
+<!-- RESULT -->
+<div class="card">
+<h3>Result</h3>
+
+<div id="result"></div>
+
+<div class="chart-container">
+    <canvas id="resultChart" class="chart-box"></canvas>
+</div>
+
+<div id="chartInfo" class="chart-info"></div>
+
+<button id="saveBtn" class="save-btn" style="display:none;" onclick="savePrediction()">
+    <i class="fas fa-save"></i> Save Prediction
+</button>
+
+</div>
+
+</div>
+
+<!-- HISTORY CARD -->
+<div class="card" style="margin-top:30px;">
+    <h3>Prediction History <span id="historyCount">(0)</span></h3>
+    
+    <div style="display:flex; justify-content:flex-end; align-items:center; gap:15px; margin-bottom:20px;">
+        <select id="historyFilter" style="width:250px;">
+            <option value="">All Predictions</option>
+            <option value="Popular">Popular Only</option>
+            <option value="Not Popular">Not Popular Only</option>
+        </select>
+        <button onclick="deleteSelected()">Delete Selected</button>
+        <button onclick="clearAllHistory()" style="background:#dc3545;">Clear All</button>
+    </div>
+
+    <table id="historyTable" style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+        <thead>
+            <tr style="background:#2c3e50; color:white;">
+                <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Total Revenue</th>
+                <th>Film Length</th>
+                <th>Rating</th>
+                <th>Predict Month</th>
+                <th>Prediction</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="8" style="text-align:center; color:#999;">No history yet. Make a prediction!</td></tr>
+        </tbody>
+    </table>
+</div>
+
+</div>
+</div>
+
+<!-- Load updated JS -->
+<script src="{% static 'rental_analytics/js/movie.js' %}"></script>
+
+</body>
+</html>

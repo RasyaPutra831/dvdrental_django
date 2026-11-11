@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Rental Prediction</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Customer Rental Prediction</h2>
+    <form id="predictionForm">
+        {{ form.as_p }}
+        <button type="submit">Predict</button>
+    </form>
+
+    <div id="statusBox">waiting for predictions...</div>
+
+    <canvas id="predictionChart" width="600" height="300"></canvas>
+
+    <script>
+        const predictUrl = "{% url 'predict_customer' %}";
+    </script>
+    <script src="{% static 'dvdrental_prediction/js/prediction_form.js' %}"></script>
+</body>
+</html>
